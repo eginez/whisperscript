@@ -1,21 +1,19 @@
 """Main CLI entry point for WhisperScript."""
-import click
-import subprocess
-from pathlib import Path
 import json
-from anthropic import Anthropic
+import subprocess
 from configparser import ConfigParser
+from pathlib import Path
+
+import click
+from anthropic import Anthropic
 
 
 def generate_applescript_from_speech(speech_text: str, api_key: str) -> str:
     """Generate AppleScript from speech text using Anthropic's Claude API.
-    
     Args:
         speech_text: The parsed speech text to convert to AppleScript
-        
     Returns:
         Generated AppleScript code as a string
-        
     Raises:
         Exception: If there's an error communicating with the Anthropic API
     """
@@ -34,7 +32,7 @@ def generate_applescript_from_speech(speech_text: str, api_key: str) -> str:
             - caveats: Any important caveats or limitations of the script"""
         }]
     )
-    
+
     return message.content[0].text
 
 @click.command()

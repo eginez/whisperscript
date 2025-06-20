@@ -1,8 +1,9 @@
 """Tests for audio capture with recorded audio files."""
 
-import pytest
-from pathlib import Path
 import json
+from pathlib import Path
+
+import pytest
 
 
 def get_test_audio_files():
