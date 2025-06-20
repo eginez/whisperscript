@@ -10,7 +10,7 @@ public class AudioRecognitionService: NSObject, SFSpeechRecognizerDelegate {
     
     private var isListening = false
     private var lastSpeechTime = Date()
-    private let silenceTimeout: TimeInterval = 2.0
+    private let silenceTimeout: TimeInterval = 5.0
     
     public override init() {
         super.init()

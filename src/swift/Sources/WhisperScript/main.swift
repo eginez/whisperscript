@@ -7,23 +7,46 @@ import Cocoa
     private var service: AudioRecognitionService?
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        // Create status bar item
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        print("WhisperScript app launched!")
+        
+        // Create status bar item with fixed length
+        statusItem = NSStatusBar.system.statusItem(withLength: 30)
         
         if let button = statusItem?.button {
             button.title = "🎤"  // Microphone emoji as icon
             button.action = #selector(statusBarButtonClicked)
             button.target = self
+        } else {
+            print("Failed to get status bar button")
         }
         
         // Create menu
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Start Listening", action: #selector(startListening), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Stop Listening", action: #selector(stopListening), keyEquivalent: ""))
+        
+        let startItem = NSMenuItem(title: "Start Listening", action: #selector(startListening), keyEquivalent: "")
+        startItem.target = self
+        menu.addItem(startItem)
+        
+        let stopItem = NSMenuItem(title: "Stop Listening", action: #selector(stopListening), keyEquivalent: "")
+        stopItem.target = self
+        menu.addItem(stopItem)
+        
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
+        
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q")
+        quitItem.target = self
+        menu.addItem(quitItem)
         
         statusItem?.menu = menu
+        
+        print("Menu bar item created with 🎤 icon")
+        print("Status item: \(statusItem?.description ?? "nil")")
+        
+        // Force the status item to be visible
+        statusItem?.isVisible = true
+        
+        // Set activation policy after menu bar is set up
+        NSApplication.shared.setActivationPolicy(.accessory)
         
         // Initialize audio service
         service = AudioRecognitionService()
@@ -98,11 +121,5 @@ import Cocoa
 }
 
 // Entry point
-let app = NSApplication.shared
-let delegate = WhisperScriptApp()
-app.delegate = delegate
-
-// Hide dock icon - run as menu bar only app
-app.setActivationPolicy(.accessory)
-
-app.run()
+NSApplication.shared.delegate = WhisperScriptApp()
+NSApplication.shared.run()

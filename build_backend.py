@@ -97,10 +97,52 @@ class WhisperScriptBuilder:
         if info_plist.exists():
             shutil.copy2(info_plist, contents_dir / "Info.plist")
 
+        # Create basic app icon to satisfy bundle requirements
+        self._create_basic_icon(resources_dir)
+
         # Set bundle permissions
         os.chmod(app_bundle, 0o755)
 
         return app_bundle
+
+    def _create_basic_icon(self, resources_dir: Path):
+        """Create a basic app icon to satisfy bundle requirements."""
+        try:
+            # Try to create ICNS file using sips (macOS built-in tool)
+            icon_icns = resources_dir / "AppIcon.icns"
+
+            # Create a simple 512x512 PNG first
+            icon_png = resources_dir / "temp_icon.png"
+
+            # Create minimal PNG using Python
+            import base64
+
+            # Minimal 1x1 PNG in base64 (transparent pixel)
+            png_data = base64.b64decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII="
+            )
+
+            with open(icon_png, "wb") as f:
+                f.write(png_data)
+
+            # Convert PNG to ICNS using sips
+            try:
+                subprocess.run([
+                    "sips", "-s", "format", "icns", str(icon_png), "--out", str(icon_icns)
+                ], check=True, capture_output=True)
+                # Remove temporary PNG file
+                icon_png.unlink()
+                print("✅ Created app icon using sips")
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                # If sips fails, create a dummy ICNS file
+                print("⚠️  sips not available, creating minimal icon file")
+                icon_png.unlink(missing_ok=True)
+                icon_icns.touch()
+
+        except Exception as e:
+            print(f"⚠️  Could not create icon: {e}, creating empty icon file")
+            icon_icns = resources_dir / "AppIcon.icns"
+            icon_icns.touch()
 
     def create_app_bundle_simple(self, swift_exe: Path):
         """Create macOS app bundle with just Swift executable."""
@@ -123,6 +165,9 @@ class WhisperScriptBuilder:
         info_plist = self.root_dir / "Info.plist"
         if info_plist.exists():
             shutil.copy2(info_plist, contents_dir / "Info.plist")
+
+        # Create basic app icon to satisfy bundle requirements
+        self._create_basic_icon(resources_dir)
 
         # Set bundle permissions
         os.chmod(app_bundle, 0o755)

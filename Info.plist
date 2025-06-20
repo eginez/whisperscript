@@ -22,6 +22,8 @@
     <string>12.0</string>
     <key>LSUIElement</key>
     <true/>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>WhisperScript needs microphone access to process voice commands.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
