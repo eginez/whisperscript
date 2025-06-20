@@ -11,17 +11,25 @@ WhisperScript allows you to speak natural language commands that get converted t
 
 ## Architecture
 
-1. **Audio Capture**: Uses macOS audio APIs via PyObjC to capture microphone input
-2. **Speech Recognition**: OpenAI Whisper for speech-to-text conversion
-3. **Intent Processing**: LLM (OpenAI GPT or local model) to convert natural language to AppleScript
-4. **Script Execution**: Generated AppleScript is executed on macOS
+The project uses a hybrid Swift/Python architecture:
+
+1. **Audio Capture & Speech Recognition**: Swift-based AudioService using macOS native Speech framework
+2. **Intent Processing**: Python-based LLM integration using Anthropic's Claude API
+3. **Script Execution**: Generated AppleScript is executed on macOS
+
+### Components
+
+- **Swift AudioService**: Native macOS audio capture and speech recognition using Speech framework
+- **Python CLI**: Main application orchestration, LLM integration, and AppleScript generation
+- **Configuration**: INI-based configuration for API keys and service paths
 
 ## Technology Stack
 
-- **Python 3.11+**: Main application language
+- **Python 3.11+**: Main application orchestration and LLM integration
+- **Swift**: Native audio capture and speech recognition service
 - **uv**: Python package and project manager
-- **PyObjC**: Python-Objective-C bridge for macOS integration
-- **OpenAI Whisper**: Speech recognition
+- **Speech Framework**: macOS native speech recognition (replaces OpenAI Whisper)
+- **Anthropic Claude API**: LLM for natural language to AppleScript conversion
 - **Ruff**: Code formatter and linter
 - **MyPy**: Static type checking
 
@@ -38,10 +46,15 @@ WhisperScript allows you to speak natural language commands that get converted t
 # Install uv if not already installed
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install dependencies
+# Install Python dependencies
 uv sync
 
-# Install in development mode
+# Build the Swift AudioService
+cd src/swift
+swift build
+
+# Install Python package in development mode
+cd ../..
 uv pip install -e .
 ```
 
@@ -61,18 +74,24 @@ uv run mypy src/
 ### Running the Application
 
 ```bash
-# Start the voice listener
-uv run whisperscript
+# Process a recorded audio file
+uv run whisperscript --recording path/to/audio.m4a
 
-# Run with debug mode
-uv run whisperscript --debug
+# Use default config.ini in project root
+uv run whisperscript --ini-file config.ini --recording tests/data/test01.m4a
 ```
 
 ## Configuration
 
-The application will look for configuration in:
-- `~/.config/whisperscript/config.toml`
-- Environment variables for API keys
+The application uses an INI configuration file (default: `config.ini`):
+
+```ini
+[paths]
+audio_service = path/to/swift/.build/arm64-apple-macosx/debug/AudioService
+
+[keys]
+ANTHROPIC_API_KEY = your-api-key-here
+```
 
 ### Required Permissions
 
@@ -86,31 +105,33 @@ The application requires the following macOS permissions:
 ```
 whisperscript/
 ├── src/
-│   └── whisperscript/
+│   ├── swift/                          # Swift AudioService
+│   │   ├── Package.swift
+│   │   └── Sources/
+│   │       ├── AudioService/
+│   │       │   └── main.swift          # Swift CLI entry point
+│   │       └── AudioServiceLib/
+│   │           └── AudioRecognitionService.swift  # Speech recognition
+│   └── whisperscript/                  # Python package
 │       ├── __init__.py
-│       ├── main.py              # CLI entry point
-│       ├── audio/
-│       │   ├── __init__.py
-│       │   └── capture.py       # Audio capture using PyObjC
-│       ├── speech/
-│       │   ├── __init__.py
-│       │   └── whisper.py       # Whisper integration
-│       ├── llm/
-│       │   ├── __init__.py
-│       │   └── processor.py     # LLM integration
-│       └── automation/
-│           ├── __init__.py
-│           └── applescript.py   # AppleScript generation and execution
+│       └── main.py                     # Python CLI entry point
 ├── tests/
-├── pyproject.toml
+│   ├── data/                           # Test audio files
+│   │   ├── test01.m4a
+│   │   └── test02.m4a
+│   └── test_audio_capture.py
+├── config.ini                          # Configuration file
+├── pyproject.toml                      # Python project config
 ├── README.md
 └── CLAUDE.md
 ```
 
 ## Commands to Remember
 
-- `uv run ruff format && uv run ruff check`: Format and lint code
+- `uv run ruff format && uv run ruff check`: Format and lint Python code
 - `uv run ruff check --fix`: Auto-fix linting issues
-- `uv run mypy src/`: Type check the codebase
+- `uv run mypy src/`: Type check the Python codebase
 - `uv run pytest`: Run tests
-- `uv sync`: Sync dependencies
+- `uv sync`: Sync Python dependencies
+- `cd src/swift && swift build`: Build the Swift AudioService
+- `uv run whisperscript --ini-file config.ini --recording tests/data/test01.m4a`: Test with sample audio
