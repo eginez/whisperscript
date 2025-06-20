@@ -1,10 +1,10 @@
 """Main CLI entry point for WhisperScript."""
 import json
+import os
+import sys
 import subprocess
-from configparser import ConfigParser
 from pathlib import Path
 
-import click
 from anthropic import Anthropic
 
 
@@ -35,36 +35,33 @@ def generate_applescript_from_speech(speech_text: str, api_key: str) -> str:
 
     return message.content[0].text
 
-@click.command()
-@click.option("--ini-file", type=click.Path(exists=True), help="Path to INI file", default="config.ini")
-@click.option("--recording", type=click.Path(exists=True), help="Path to recording file")
-def cli(ini_file: Path, recording: Path) -> None:
+def cli() -> None:
     """Voice-controlled automation tool for macOS."""
-    click.echo("WhisperScript starting...")
-    click.echo(f"INI file: {ini_file}")
-    config = ConfigParser()
-    config.read(ini_file)
-    audio_command = config["paths"]["audio_service"].split()
-    anthropic_api_key = config["keys"]["ANTHROPIC_API_KEY"]
-    if recording:
-        click.echo(f"Recording file: {recording}")
-        audio_command.append(str(recording))
-
     try:
-        speech_json = subprocess.check_output(audio_command, text=True)
-        speech_parsed = json.loads(speech_json)
-        applescript = generate_applescript_from_speech(speech_parsed['text'], api_key=anthropic_api_key)
-        click.echo(f"Generated AppleScript:\n{applescript}")
+        # Read speech text from stdin
+        speech_text = sys.stdin.read().strip()
+        
+        if not speech_text:
+            print("Error: No speech text received from stdin", file=sys.stderr)
+            sys.exit(1)
+        
+        print(f"Processing speech: {speech_text}", file=sys.stderr)
+        
+        # Get API key from environment variable
+        anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not anthropic_api_key:
+            print("Error: ANTHROPIC_API_KEY environment variable not set", file=sys.stderr)
+            sys.exit(1)
+        
+        # Generate AppleScript
+        applescript = generate_applescript_from_speech(speech_text, api_key=anthropic_api_key)
+        print(f"Generated AppleScript:\n{applescript}")
+        
         # TODO: Execute the generated AppleScript
-
-    except subprocess.CalledProcessError as e:
-        click.echo(f"Error processing audio: {e}", err=True)
-    except json.JSONDecodeError as e:
-        click.echo(f"Error parsing speech JSON: {e}", err=True)
+        
     except Exception as e:
-        click.echo(f"Unexpected error: {e}", err=True)
-
-    # TODO: Implement main application logic
+        print(f"Error processing speech: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

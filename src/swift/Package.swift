@@ -4,22 +4,23 @@
 import PackageDescription
 
 let package = Package(
-    name: "AudioService",
+    name: "WhisperScript",
     platforms: [
-        .macOS(.v13)
+        .macOS(.v12)
+    ],
+    products: [
+        .executable(name: "WhisperScript", targets: ["WhisperScript"]),
     ],
     targets: [
-        .target(
-            name: "AudioServiceLib",
+        .executableTarget(
+            name: "WhisperScript",
+            path: "Sources/WhisperScript",
             linkerSettings: [
                 .linkedFramework("AVFoundation"),
                 .linkedFramework("Speech"),
-                .linkedFramework("Foundation")
+                .linkedFramework("Foundation"),
+                .linkedFramework("Cocoa")
             ]
-        ),
-        .executableTarget(
-            name: "AudioService",
-            dependencies: ["AudioServiceLib"]
         ),
     ]
 )

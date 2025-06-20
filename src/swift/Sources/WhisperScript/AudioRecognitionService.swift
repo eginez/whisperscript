@@ -146,6 +146,39 @@ public class AudioRecognitionService: NSObject, SFSpeechRecognizerDelegate {
            let jsonString = String(data: jsonData, encoding: .utf8) {
             print(jsonString)
         }
+        
+        // Call Python script with the recognized text
+        callPythonScript(with: text)
+    }
+    
+    private func callPythonScript(with text: String) {
+        // Get the path to the Python script in the app bundle
+        let bundlePath = Bundle.main.bundlePath
+        let pythonScriptPath = "\(bundlePath)/Contents/Resources/whisperscript.pex"
+        
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: pythonScriptPath)
+        
+        let pipe = Pipe()
+        process.standardInput = pipe
+        
+        do {
+            try process.run()
+            
+            // Send the recognized text to the Python script via stdin
+            let inputData = text.data(using: .utf8)!
+            pipe.fileHandleForWriting.write(inputData)
+            pipe.fileHandleForWriting.closeFile()
+            
+            process.waitUntilExit()
+            
+            if process.terminationStatus != 0 {
+                outputError("Python script exited with status: \(process.terminationStatus)")
+            }
+            
+        } catch {
+            outputError("Failed to run Python script: \(error.localizedDescription)")
+        }
     }
     
     public func outputError(_ message: String) {

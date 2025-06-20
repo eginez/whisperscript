@@ -3,3 +3,5 @@
  .DS_Store
 src/swift/.build/*
 /*.ini
+build/
+dist/
