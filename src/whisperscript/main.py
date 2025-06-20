@@ -1,9 +1,6 @@
 """Main CLI entry point for WhisperScript."""
-import json
 import os
 import sys
-import subprocess
-from pathlib import Path
 
 from anthropic import Anthropic
 
@@ -40,25 +37,25 @@ def cli() -> None:
     try:
         # Read speech text from stdin
         speech_text = sys.stdin.read().strip()
-        
+
         if not speech_text:
             print("Error: No speech text received from stdin", file=sys.stderr)
             sys.exit(1)
-        
+
         print(f"Processing speech: {speech_text}", file=sys.stderr)
-        
+
         # Get API key from environment variable
         anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
         if not anthropic_api_key:
             print("Error: ANTHROPIC_API_KEY environment variable not set", file=sys.stderr)
             sys.exit(1)
-        
+
         # Generate AppleScript
         applescript = generate_applescript_from_speech(speech_text, api_key=anthropic_api_key)
         print(f"Generated AppleScript:\n{applescript}")
-        
+
         # TODO: Execute the generated AppleScript
-        
+
     except Exception as e:
         print(f"Error processing speech: {e}", file=sys.stderr)
         sys.exit(1)

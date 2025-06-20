@@ -4,17 +4,18 @@ A voice-controlled automation tool for macOS that converts spoken instructions i
 
 ## Features
 
-- **Voice Recognition**: Native macOS Speech framework for accurate speech-to-text
+- **Native Speech Recognition**: macOS Speech framework for accurate speech-to-text
 - **AI-Powered**: Uses Anthropic's Claude API to convert natural language to AppleScript
-- **macOS Integration**: Seamless automation of macOS applications
-- **Hybrid Architecture**: Swift for audio processing, Python for orchestration
+- **Self-Contained**: Pex-packaged Python executable with all dependencies
+- **Menu Bar App**: Runs in background with system tray icon (UI needs work)
+- **Environment Config**: Simple environment variable configuration
 
 ## Quick Start
 
 ### Prerequisites
 
-- macOS (required for AppleScript and Speech framework)
-- Python 3.11+
+- macOS 12+ (required for Speech framework and AppleScript)
+- Python 3.9+
 - Swift 5.9+
 - [uv](https://docs.astral.sh/uv/) package manager
 
@@ -28,54 +29,44 @@ cd whisperscript
 # Install uv if needed
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install Python dependencies
-uv sync
-
-# Build the Swift AudioService
-cd src/swift
-swift build
-cd ../..
-
-# Install the Python package
-uv pip install -e .
+# Install dependencies and build app bundle
+uv sync --extra dev
+uv run python build_backend.py
 ```
 
 ### Configuration
 
-1. Create a `config.ini` file in the project root:
+Set your Anthropic API key as an environment variable:
 
-```ini
-[paths]
-audio_service = /path/to/whisperscript/src/swift/.build/arm64-apple-macosx/debug/AudioService
-
-[keys]
-ANTHROPIC_API_KEY = your-anthropic-api-key-here
+```bash
+export ANTHROPIC_API_KEY="your-api-key-here"
 ```
 
-2. Get your Anthropic API key from [https://console.anthropic.com/](https://console.anthropic.com/)
+Get your API key from [https://console.anthropic.com/](https://console.anthropic.com/)
 
 ### Usage
 
-Process an audio file:
+Test with an audio file:
 
 ```bash
-uv run whisperscript --ini-file config.ini --recording path/to/audio.m4a
+export ANTHROPIC_API_KEY="your-api-key-here"
+./dist/WhisperScript.app/Contents/MacOS/WhisperScript tests/data/test01.m4a
 ```
 
-Test with provided samples:
+Run as menu bar app (UI needs work):
 
 ```bash
-uv run whisperscript --ini-file config.ini --recording tests/data/test01.m4a
+open dist/WhisperScript.app
 ```
 
 ## Example Commands
 
 Say something like:
+- "Hello find Slack and send a message to John"
 - "Open calculator and compute 25 times 30"
 - "Create a reminder for tomorrow at 2 PM to call the dentist"
-- "Send an email to john@example.com saying the meeting is at 3 PM"
 
-WhisperScript will generate and can execute the corresponding AppleScript automatically.
+WhisperScript will generate the corresponding AppleScript for these actions.
 
 ## Development
 
@@ -94,10 +85,10 @@ uv run pytest
 
 ### Project Structure
 
-- `src/swift/` - Swift AudioService for speech recognition
-- `src/whisperscript/` - Python CLI and LLM integration
+- `src/swift/` - Swift macOS app with speech recognition
+- `src/whisperscript/` - Python package for LLM processing
+- `build_backend.py` - App bundle build script
 - `tests/` - Test files and sample audio data
-- `config.ini` - Configuration file
 
 ## Permissions
 
@@ -126,8 +117,9 @@ MIT License - see LICENSE file for details.
 ### Common Issues
 
 - **Permission Denied**: Ensure all required macOS permissions are granted
-- **Audio Service Path**: Update the `audio_service` path in `config.ini` to match your build location
-- **API Key**: Verify your Anthropic API key is correct and has sufficient credits
+- **API Key**: Verify your `ANTHROPIC_API_KEY` environment variable is set correctly
+- **Python Compatibility**: Pex file supports Python 3.9-3.13 on Apple Silicon Macs
+- **Menu Bar UI**: The menu bar interface is not fully implemented yet
 
 ### Getting Help
 

@@ -13,22 +13,23 @@ WhisperScript allows you to speak natural language commands that get converted t
 
 The project uses a hybrid Swift/Python architecture:
 
-1. **Audio Capture & Speech Recognition**: Swift-based AudioService using macOS native Speech framework
-2. **Intent Processing**: Python-based LLM integration using Anthropic's Claude API
-3. **Script Execution**: Generated AppleScript is executed on macOS
+1. **Swift App**: Native macOS app with speech recognition using Speech framework
+2. **Python Processing**: Pex executable that processes speech text and generates AppleScript using Claude API
+3. **Integration**: Swift app calls Python script via stdin/stdout
 
 ### Components
 
-- **Swift AudioService**: Native macOS audio capture and speech recognition using Speech framework
-- **Python CLI**: Main application orchestration, LLM integration, and AppleScript generation
-- **Configuration**: INI-based configuration for API keys and service paths
+- **Swift App**: Audio capture, speech recognition, and menu bar interface (menu bar UI needs work)
+- **Python Pex**: Self-contained executable for LLM processing and AppleScript generation
+- **Environment Config**: Uses `ANTHROPIC_API_KEY` environment variable
 
 ## Technology Stack
 
-- **Python 3.11+**: Main application orchestration and LLM integration
-- **Swift**: Native audio capture and speech recognition service
+- **Python 3.9+**: LLM processing and AppleScript generation
+- **Swift**: Native macOS app with speech recognition
+- **Pex**: Self-contained Python executable packaging
 - **uv**: Python package and project manager
-- **Speech Framework**: macOS native speech recognition (replaces OpenAI Whisper)
+- **Speech Framework**: macOS native speech recognition
 - **Anthropic Claude API**: LLM for natural language to AppleScript conversion
 - **Ruff**: Code formatter and linter
 - **MyPy**: Static type checking
@@ -36,8 +37,9 @@ The project uses a hybrid Swift/Python architecture:
 ## Development Setup
 
 ### Prerequisites
-- macOS (required for AppleScript execution)
-- Python 3.11 or higher
+- macOS 12+ (required for Speech framework and AppleScript execution)
+- Python 3.9 or higher
+- Swift 5.9+
 - uv package manager
 
 ### Installation
@@ -47,15 +49,10 @@ The project uses a hybrid Swift/Python architecture:
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install Python dependencies
-uv sync
+uv sync --extra dev
 
-# Build the Swift AudioService
-cd src/swift
-swift build
-
-# Install Python package in development mode
-cd ../..
-uv pip install -e .
+# Build the complete app bundle
+uv run python build_backend.py
 ```
 
 ### Code Quality
@@ -74,23 +71,23 @@ uv run mypy src/
 ### Running the Application
 
 ```bash
-# Process a recorded audio file
-uv run whisperscript --recording path/to/audio.m4a
+# Set API key environment variable
+export ANTHROPIC_API_KEY="your-api-key-here"
 
-# Use default config.ini in project root
-uv run whisperscript --ini-file config.ini --recording tests/data/test01.m4a
+# Test with a recording file
+./dist/WhisperScript.app/Contents/MacOS/WhisperScript tests/data/test01.m4a
+
+# Run as menu bar app (menu bar UI needs work)
+open dist/WhisperScript.app
 ```
 
 ## Configuration
 
-The application uses an INI configuration file (default: `config.ini`):
+The application uses environment variables for configuration:
 
-```ini
-[paths]
-audio_service = path/to/swift/.build/arm64-apple-macosx/debug/AudioService
-
-[keys]
-ANTHROPIC_API_KEY = your-api-key-here
+```bash
+# Required: Anthropic API key
+export ANTHROPIC_API_KEY="your-api-key-here"
 ```
 
 ### Required Permissions
@@ -105,22 +102,22 @@ The application requires the following macOS permissions:
 ```
 whisperscript/
 ├── src/
-│   ├── swift/                          # Swift AudioService
+│   ├── swift/                          # Swift macOS app
 │   │   ├── Package.swift
 │   │   └── Sources/
-│   │       ├── AudioService/
-│   │       │   └── main.swift          # Swift CLI entry point
-│   │       └── AudioServiceLib/
+│   │       └── WhisperScript/          # Unified app target
+│   │           ├── main.swift          # Menu bar app entry point
 │   │           └── AudioRecognitionService.swift  # Speech recognition
 │   └── whisperscript/                  # Python package
 │       ├── __init__.py
-│       └── main.py                     # Python CLI entry point
+│       └── main.py                     # LLM processing (reads from stdin)
 ├── tests/
 │   ├── data/                           # Test audio files
 │   │   ├── test01.m4a
 │   │   └── test02.m4a
 │   └── test_audio_capture.py
-├── config.ini                          # Configuration file
+├── build_backend.py                    # App bundle build script
+├── Info.plist                         # macOS app metadata
 ├── pyproject.toml                      # Python project config
 ├── README.md
 └── CLAUDE.md
@@ -128,10 +125,9 @@ whisperscript/
 
 ## Commands to Remember
 
+- `uv sync --extra dev`: Install all dependencies including Pex
+- `uv run python build_backend.py`: Build complete app bundle
 - `uv run ruff format && uv run ruff check`: Format and lint Python code
-- `uv run ruff check --fix`: Auto-fix linting issues
 - `uv run mypy src/`: Type check the Python codebase
-- `uv run pytest`: Run tests
-- `uv sync`: Sync Python dependencies
-- `cd src/swift && swift build`: Build the Swift AudioService
-- `uv run whisperscript --ini-file config.ini --recording tests/data/test01.m4a`: Test with sample audio
+- `cd src/swift && swift build`: Build Swift app standalone
+- `export ANTHROPIC_API_KEY="your-key" && ./dist/WhisperScript.app/Contents/MacOS/WhisperScript tests/data/test01.m4a`: Test with audio file
