@@ -51,8 +51,9 @@ def cli() -> None:
             sys.exit(1)
 
         # Generate AppleScript
-        applescript = generate_applescript_from_speech(speech_text, api_key=anthropic_api_key)
-        print(f"Generated AppleScript:\n{applescript}")
+        import json
+        response = json.loads(generate_applescript_from_speech(speech_text, api_key=anthropic_api_key))
+        print(f"Generated AppleScript:\n{response['code']}")
 
         # TODO: Execute the generated AppleScript
 
